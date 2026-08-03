@@ -4,7 +4,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from database.base import Base
+from app.database.base import Base
+from app.database.models import TrackedVacancy
 
 
 DATABASE_URL = "sqlite+aiosqlite:///./ever_jobs_bot.db"
@@ -12,7 +13,7 @@ DATABASE_URL = "sqlite+aiosqlite:///./ever_jobs_bot.db"
 
 engine = create_async_engine(
     DATABASE_URL,
-    echo=False,
+    echo=True,
 )
 
 async_session_factory = async_sessionmaker(

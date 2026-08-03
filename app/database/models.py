@@ -11,7 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from database.base import Base
+from app.database.base import Base
 
 
 class VacancyStatus(StrEnum):

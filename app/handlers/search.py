@@ -1,33 +1,76 @@
 from html import escape
+from typing import Any
 
-from aiogram import Router
-from aiogram.filters import Command
+from aiogram import F, Router
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from app.database.models import VacancyStatus
+from app.database.repository import vacancy_repository
 from app.job_sources import SourceGroup
-
+from app.keyboards.main_menu import SEARCH_JOBS_BUTTON
+from app.keyboards.vacancy_actions import (
+    build_vacancy_actions_keyboard,
+)
 from app.services.ever_jobs_client import (
     EverJobsApiError,
     ever_jobs_client,
 )
+from app.states.search import SearchStates
+
 
 router = Router()
 
-@router.message(Command("search"))
-async def handle_search(message: Message) -> None:
-    search_term = extract_search_term(message.text)
+
+@router.message(F.text == SEARCH_JOBS_BUTTON)
+async def request_search_term(
+    message: Message,
+    state: FSMContext,
+) -> None:
+    """
+    Обробляє натискання кнопки «Знайти вакансії».
+
+    Переводить користувача у стан очікування
+    пошукового запиту.
+    """
+    await state.set_state(
+        SearchStates.waiting_for_search_term
+    )
+
+    await message.answer(
+        "Що шукаємо?\n\n"
+        "Наприклад:\n"
+        "• Python Developer\n"
+        "• Junior Odoo Developer\n"
+        "• Data Analyst"
+    )
+
+
+@router.message(
+    SearchStates.waiting_for_search_term,
+    F.text,
+)
+async def handle_search(
+    message: Message,
+    state: FSMContext,
+) -> None:
+    """
+    Отримує пошуковий запит користувача,
+    викликає Ever Jobs API та показує нові вакансії.
+    """
+    search_term = (message.text or "").strip()
 
     if not search_term:
         await message.answer(
-            "Вкажіть, яку вакансію потрібно знайти.\n\n"
-            "Наприклад:\n"
-            "<code>/search python developer</code>",
-            parse_mode="HTML",
+            "Напишіть назву вакансії або спеціальності."
         )
         return
 
+    # Завершуємо режим очікування пошукового запиту.
+    await state.clear()
+
     status_message = await message.answer(
-        f"🔎 Шукаю вакансії за запитом: "
+        "🔎 Шукаю вакансії за запитом: "
         f"<b>{escape(search_term)}</b>...",
         parse_mode="HTML",
     )
@@ -37,8 +80,8 @@ async def handle_search(message: Message) -> None:
             search_term=search_term,
             groups=[
                 SourceGroup.UKRAINE,
-                #SourceGroup.GLOBAL,
-                #SourceGroup.COMPANIES,
+                # SourceGroup.GLOBAL,
+                # SourceGroup.COMPANIES,
             ],
             results_per_source=5,
         )
@@ -58,45 +101,81 @@ async def handle_search(message: Message) -> None:
         )
         return
 
-    await status_message.edit_text(
-        f"Знайдено вакансій: <b>{len(jobs)}</b>",
-        parse_mode="HTML",
-    )
+    if message.from_user is None:
+        await status_message.edit_text(
+            "Не вдалося визначити користувача Telegram."
+        )
+        return
+
+    new_jobs_count = 0
 
     for job in jobs:
+        vacancy = await vacancy_repository.create_or_get(
+            telegram_user_id=message.from_user.id,
+            job=job,
+        )
+
+        # Відхилені, applied, interview та інші
+        # оброблені вакансії повторно не показуємо.
+        if vacancy.status != VacancyStatus.NEW:
+            continue
+
+        new_jobs_count += 1
+
         await message.answer(
             format_job(job),
             parse_mode="HTML",
             disable_web_page_preview=True,
+            reply_markup=build_vacancy_actions_keyboard(
+                vacancy_id=vacancy.id,
+                status=vacancy.status,
+            ),
         )
 
+    if new_jobs_count == 0:
+        await status_message.edit_text(
+            "Нових вакансій немає.\n"
+            "Усі знайдені вакансії ви вже переглядали."
+        )
+        return
 
-def extract_search_term(text: str | None) -> str | None:
-    if not text:
-        return None
-
-    parts = text.split(maxsplit=1)
-
-    if len(parts) < 2:
-        return None
-
-    search_term = parts[1].strip()
-
-    return search_term or None
-
-
-def format_job(job: dict) -> str:
-    title = escape(job.get("title") or "Без назви")
-    company = escape(
-        job.get("companyName") or "Компанію не вказано"
+    await status_message.edit_text(
+        "Знайдено нових вакансій: "
+        f"<b>{new_jobs_count}</b>",
+        parse_mode="HTML",
     )
-    job_url = job.get("jobUrl") or ""
-    site = escape(job.get("site") or "unknown")
+
+
+def format_job(job: dict[str, Any]) -> str:
+    """
+    Форматує одну вакансію для Telegram.
+    """
+    title = escape(
+        str(job.get("title") or "Без назви")
+    )
+
+    company = escape(
+        str(
+            job.get("companyName")
+            or "Компанію не вказано"
+        )
+    )
+
+    job_url = str(job.get("jobUrl") or "")
+    site = escape(str(job.get("site") or "unknown"))
+
     date_posted = escape(
-        job.get("datePosted") or "дату не вказано"
+        str(
+            job.get("datePosted")
+            or "дату не вказано"
+        )
     )
 
     location_data = job.get("location") or {}
+
+    if not isinstance(location_data, dict):
+        location_data = {}
+
     location = build_location(location_data)
 
     remote_text = (
@@ -116,14 +195,22 @@ def format_job(job: dict) -> str:
 
     if job_url:
         safe_url = escape(job_url, quote=True)
+
         lines.append(
-            f'🔗 <a href="{safe_url}">Відкрити вакансію</a>'
+            f'🔗 <a href="{safe_url}">'
+            "Відкрити вакансію"
+            "</a>"
         )
 
     return "\n".join(lines)
 
 
-def build_location(location: dict) -> str:
+def build_location(
+    location: dict[str, Any],
+) -> str:
+    """
+    Збирає місто, регіон і країну в один рядок.
+    """
     parts = [
         location.get("city"),
         location.get("state"),
