@@ -4,6 +4,8 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
+from app.job_sources import SourceGroup
+
 from app.services.ever_jobs_client import (
     EverJobsApiError,
     ever_jobs_client,
@@ -31,10 +33,14 @@ async def handle_search(message: Message) -> None:
     )
 
     try:
-        jobs = await ever_jobs_client.search_jobs(
+        jobs = await ever_jobs_client.search_groups(
             search_term=search_term,
-            results_wanted=15,
-            dedup=True,
+            groups=[
+                SourceGroup.UKRAINE,
+                #SourceGroup.GLOBAL,
+                #SourceGroup.COMPANIES,
+            ],
+            results_per_source=5,
         )
     except EverJobsApiError as error:
         await status_message.edit_text(
