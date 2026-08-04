@@ -13,7 +13,11 @@ from app.handlers.vacancy_actions import (
 from app.handlers.tracked_vacancies import (
     router as tracked_vacancies_router,
 )
+from app.handlers.search_navigation import (router as search_navigation_router,
+)
 
+
+logging.basicConfig(level=logging.INFO)
 
 async def main() -> None:
     logging.basicConfig(
@@ -28,6 +32,7 @@ async def main() -> None:
     dispatcher.include_router(search_router)
     dispatcher.include_router(vacancy_actions_router)
     dispatcher.include_router(tracked_vacancies_router)
+    dispatcher.include_router(search_navigation_router)
 
     try:
         await dispatcher.start_polling(bot)

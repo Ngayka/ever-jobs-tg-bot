@@ -1,5 +1,6 @@
 from aiogram import F, Router
 from aiogram.types import CallbackQuery
+from aiogram.fsm.context import FSMContext
 
 from app.database.models import VacancyStatus
 from app.database.repository import vacancy_repository
@@ -20,6 +21,7 @@ router = Router()
 async def handle_reject_vacancy(
     callback: CallbackQuery,
     callback_data: VacancyActionCallback,
+    state: FSMContext,
 ) -> None:
     vacancy = await vacancy_repository.set_status(
         vacancy_id=callback_data.vacancy_id,
@@ -29,20 +31,33 @@ async def handle_reject_vacancy(
 
     if vacancy is None:
         await callback.answer(
-            "Вакансію не знайдено.",
+            "Vacancy not found.",
             show_alert=True,
         )
         return
 
-    await callback.answer("Вакансію відхилено")
+    await callback.answer("Vacancy rejected")
 
     if callback.message:
+        data = await state.get_data()
+
+        jobs = data.get("search_jobs", [])
+        current_index = data.get(
+            "current_job_index",
+            0,
+        )
+
         await callback.message.edit_reply_markup(
-            reply_markup=None,
+            reply_markup=build_vacancy_actions_keyboard(
+                vacancy_id=vacancy.id,
+                status=vacancy.status,
+                current_index=current_index,
+                total_jobs=len(jobs),
+            ),
         )
 
         await callback.message.answer(
-            f"❌ Відхилено: {vacancy.title}"
+            f"❌ Reject: {vacancy.title}"
         )
 
 
@@ -54,6 +69,7 @@ async def handle_reject_vacancy(
 async def handle_applied_vacancy(
     callback: CallbackQuery,
     callback_data: VacancyActionCallback,
+    state: FSMContext,
 ) -> None:
     vacancy = await vacancy_repository.set_status(
         vacancy_id=callback_data.vacancy_id,
@@ -63,31 +79,41 @@ async def handle_applied_vacancy(
 
     if vacancy is None:
         await callback.answer(
-            "Вакансію не знайдено.",
+            "Vacancy not found.",
             show_alert=True,
         )
         return
 
-    await callback.answer("Збережено як «Відправила резюме»")
+    await callback.answer("Save in 'Sent CV's'")
 
     if callback.message:
+        data = await state.get_data()
+
+        jobs = data.get("search_jobs", [])
+        current_index = data.get(
+            "current_job_index",
+            0,
+        )
+
         await callback.message.edit_reply_markup(
             reply_markup=build_vacancy_actions_keyboard(
                 vacancy_id=vacancy.id,
                 status=vacancy.status,
+                current_index=current_index,
+                total_jobs=len(jobs),
             ),
         )
 
         applied_date = (
             vacancy.applied_at.strftime("%d.%m.%Y %H:%M")
             if vacancy.applied_at
-            else "не вказано"
+            else "Not specified"
         )
 
         await callback.message.answer(
-            "📨 Резюме відправлено\n"
+            "📨 Application submitted\n"
             f"{vacancy.title}\n"
-            f"Дата: {applied_date}"
+            f"Date: {applied_date}"
         )
 
 
@@ -99,6 +125,7 @@ async def handle_applied_vacancy(
 async def handle_interview_vacancy(
     callback: CallbackQuery,
     callback_data: VacancyActionCallback,
+    state: FSMContext,
 ) -> None:
     vacancy = await vacancy_repository.set_status(
         vacancy_id=callback_data.vacancy_id,
@@ -108,26 +135,39 @@ async def handle_interview_vacancy(
 
     if vacancy is None:
         await callback.answer(
-            "Вакансію не знайдено.",
+            "Vacancy not found.",
             show_alert=True,
         )
         return
 
-    await callback.answer("Статус змінено на «Співбесіда»")
+    await callback.answer("Status: Job's interview")
 
     if callback.message:
+        data = await state.get_data()
+
+        jobs = data.get("search_jobs", [])
+        current_index = data.get(
+            "current_job_index",
+            0,
+        )
+
         await callback.message.edit_reply_markup(
-            reply_markup=None,
+            reply_markup=build_vacancy_actions_keyboard(
+                vacancy_id=vacancy.id,
+                status=vacancy.status,
+                current_index=current_index,
+                total_jobs=len(jobs),
+            ),
         )
 
         interview_date = (
             vacancy.interview_at.strftime("%d.%m.%Y %H:%M")
             if vacancy.interview_at
-            else "не вказано"
+            else "Not specified"
         )
 
         await callback.message.answer(
-            "🎤 Співбесіда\n"
+            "🎤 Job Interview\n"
             f"{vacancy.title}\n"
-            f"Дата зміни статусу: {interview_date}"
+            f"Date update: {interview_date}"
         )

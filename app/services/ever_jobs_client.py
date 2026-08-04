@@ -1,8 +1,7 @@
 import asyncio
-from typing import Any, Iterable
+from typing import Any
 import httpx
 from app.config import settings
-from app.job_sources import SOURCE_GROUPS, SourceGroup
 
 
 SEARCH_JOBS_QUERY = """
@@ -64,50 +63,6 @@ class EverJobsClient:
 
         return unique_jobs
 
-    async def search_groups(
-            self,
-            search_term: str,
-            groups: Iterable[SourceGroup],
-            *,
-            results_per_source: int = 5,
-    ) -> list[dict[str, Any]]:
-        selected_groups = list(groups)
-
-        tasks = []
-
-        for group in selected_groups:
-            sites = SOURCE_GROUPS.get(group, [])
-
-            if not sites:
-                continue
-
-            tasks.append(
-                self.search_jobs(
-                    search_term=search_term,
-                    results_wanted=results_per_source,
-                    sites=sites,
-                    dedup=True,
-                )
-            )
-
-        if not tasks:
-            return []
-
-        results = await asyncio.gather(
-            *tasks,
-            return_exceptions=True,
-        )
-
-        combined_jobs: list[dict[str, Any]] = []
-
-        for result in results:
-            if isinstance(result, Exception):
-                # Одна група впала — інші результати все одно показуємо.
-                continue
-
-            combined_jobs.extend(result)
-
-        return self._deduplicate_jobs(combined_jobs)
 
     async def search_jobs(
         self,

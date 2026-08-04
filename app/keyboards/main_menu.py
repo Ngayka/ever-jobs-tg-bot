@@ -1,9 +1,9 @@
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 
-SEARCH_JOBS_BUTTON = "🔍 Знайти вакансії"
-APPLIED_JOBS_BUTTON = "📨 Відправлені резюме"
-INTERVIEWS_BUTTON = "🎤 Співбесіди"
+SEARCH_JOBS_BUTTON = "🔍 Let's find your next job"
+APPLIED_JOBS_BUTTON = "📨 Sent CV's"
+INTERVIEWS_BUTTON = "🎤 Job's interviews"
 
 
 def build_main_menu() -> ReplyKeyboardMarkup:
@@ -18,5 +18,5 @@ def build_main_menu() -> ReplyKeyboardMarkup:
             ],
         ],
         resize_keyboard=True,
-        input_field_placeholder="Оберіть дію",
+        input_field_placeholder="Choose an action",
     )
