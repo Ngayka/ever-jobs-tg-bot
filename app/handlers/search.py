@@ -30,6 +30,10 @@ from app.services.ever_jobs_client import (
     EverJobsApiError,
     ever_jobs_client,
 )
+from app.services.job_relevance import (
+    calculate_relevance_score,
+    is_job_relevant,
+)
 from app.states.search import SearchStates
 
 
@@ -211,13 +215,6 @@ async def select_source_type_and_search(
             )
         )
 
-        print("=" * 60)
-        print(f"Region: {region.value}")
-        print(f"Selection: {source_selection.value}")
-        print(f"Sites count: {len(sites)}")
-        print(f"Sites: {sites}")
-        print("=" * 60)
-
     else:
         # Звичайний пошук по job boards обраного регіону.
         sites = get_sources(
@@ -280,9 +277,38 @@ async def select_source_type_and_search(
         await state.clear()
         return
 
-    visible_jobs: list[dict[str, Any]] = []
 
     for job in jobs:
+        score = calculate_relevance_score(
+            job=job,
+            search_term=search_term,
+        )
+    print(
+        f"[relevance={score}] "
+        f"{job.get('title')} | "
+        f"{job.get('site')}"
+    )
+
+
+    relevant_jobs = [
+        job for job in jobs
+        if is_job_relevant(
+            job=job,
+            search_term=search_term,
+        )
+    ]
+
+    if not relevant_jobs:
+        await status_message.edit_text(
+            "Vacancies were found, but none matched "
+            "the required skills closely enough."
+        )
+        await state.clear()
+        return
+
+    visible_jobs: list[dict[str, Any]] = []
+
+    for job in relevant_jobs:
         site = str(job.get("site") or "unknown")
         external_job_id = str(
             job.get("id")
