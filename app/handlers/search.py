@@ -1,9 +1,6 @@
 from html import escape
 from typing import Any
 
-from html import escape
-from typing import Any
-
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -12,9 +9,11 @@ from app.database.models import VacancyStatus
 from app.database.repository import vacancy_repository
 from app.job_sources import (
     Region,
-    SourceType,
-    get_sources,
+    get_sources, SourceType,
 )
+from app.search_filters import (
+    SourceSelection,
+    get_source_types,)
 from app.keyboards.callbacks import (
     RegionCallback,
     SourceTypeCallback,
@@ -134,7 +133,7 @@ async def select_source_type_and_search(
     state: FSMContext,
 ) -> None:
     try:
-        source_type = SourceType(
+        source_selection = SourceSelection(
             callback_data.source_type
         )
     except ValueError:
@@ -170,17 +169,67 @@ async def select_source_type_and_search(
         await state.clear()
         return
 
-    sites = get_sources(
-        region=region,
-        source_type=source_type,
+    source_types = get_source_types(
+        source_selection,
     )
 
+    if source_selection == SourceSelection.COMPANIES:
+        # Корпоративні scraper-и в каталозі позначені
+        # як WORLDWIDE, а регіон вакансії визначається
+        # вже за location у результатах.
+        sites = get_sources(
+            region=Region.WORLDWIDE,
+            source_types={
+                SourceType.COMPANY,
+            },
+        )
+
+    elif source_selection == SourceSelection.ALL:
+        # Беремо job boards обраного регіону.
+        regional_sites = get_sources(
+            region=region,
+            source_types={
+                SourceType.JOB_BOARD,
+                SourceType.REMOTE_JOB_BOARD,
+                SourceType.GOVERNMENT,
+                SourceType.NICHE,
+            },
+        )
+
+        # Корпоративні джерела беремо з WORLDWIDE.
+        company_sites = get_sources(
+            region=Region.WORLDWIDE,
+            source_types={
+                SourceType.COMPANY,
+            },
+        )
+
+        # Об'єднуємо списки без дублікатів.
+        sites = list(
+            dict.fromkeys(
+                regional_sites + company_sites
+            )
+        )
+
+        print("=" * 60)
+        print(f"Region: {region.value}")
+        print(f"Selection: {source_selection.value}")
+        print(f"Sites count: {len(sites)}")
+        print(f"Sites: {sites}")
+        print("=" * 60)
+
+    else:
+        # Звичайний пошук по job boards обраного регіону.
+        sites = get_sources(
+            region=region,
+            source_types=source_types,
+        )
     if not sites:
         await callback.answer()
 
         if callback.message:
             await callback.message.edit_text(
-                "No data available for chosen ",
+                "No data available for chosen "
                 "region and source type."
             )
 
@@ -188,7 +237,7 @@ async def select_source_type_and_search(
         return
 
     await state.update_data(
-        source_type=source_type.value,
+        source_type=source_selection.value,
     )
 
     await callback.answer()
@@ -202,7 +251,7 @@ async def select_source_type_and_search(
         "🔎 Looking for vacancies\n\n"
         f"Title: <b>{escape(search_term)}</b>\n"
         f"Regions: <b>{escape(region.value)}</b>\n"
-        f"Sources: <b>{escape(source_type.value)}</b>",
+        f"Sources: <b>{escape(source_selection.value)}</b>",
         parse_mode="HTML",
     )
 

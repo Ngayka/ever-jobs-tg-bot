@@ -8,6 +8,7 @@ from app.keyboards.callbacks import (
     RegionCallback,
     SourceTypeCallback,
 )
+from app.search_filters import (SourceSelection)
 
 
 def build_region_keyboard() -> InlineKeyboardMarkup:
@@ -60,7 +61,7 @@ def build_source_type_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text="🔎 Job boards",
                     callback_data=SourceTypeCallback(
-                        source_type=SourceType.JOB_BOARDS,
+                        source_type=SourceSelection.JOB_BOARDS,
                     ).pack(),
                 ),
             ],
@@ -68,7 +69,7 @@ def build_source_type_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text="🏢 Companies",
                     callback_data=SourceTypeCallback(
-                        source_type=SourceType.COMPANIES,
+                        source_type=SourceSelection.COMPANIES,
                     ).pack(),
                 ),
             ],
@@ -76,7 +77,7 @@ def build_source_type_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text="⭐ All recommended",
                     callback_data=SourceTypeCallback(
-                        source_type=SourceType.ALL,
+                        source_type=SourceSelection.ALL,
                     ).pack(),
                 ),
             ],
