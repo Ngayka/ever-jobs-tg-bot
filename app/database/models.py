@@ -135,3 +135,24 @@ class TrackedVacancy(Base):
         DateTime,
         nullable=True,
     )
+
+
+class JobSubscription(Base):
+    __tablename__ = "job_subscriptions"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    telegram_user_id: Mapped[int] = mapped_column(
+        index=True,
+    )
+
+    search_term: Mapped[str]
+
+    source_group: Mapped[str]
+
+    enabled: Mapped[bool] = mapped_column(
+        default=True,
+    )

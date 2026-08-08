@@ -8,15 +8,10 @@ from aiogram.types import CallbackQuery, Message
 from app.database.models import VacancyStatus
 from app.database.repository import vacancy_repository
 from app.docs.job_sources import (
-    SOURCE_CATALOG,
     get_enabled_sources, SourceGroup
 )
-from app.search_filters import (
-    SourceSelection,
-    )
 from app.keyboards.callbacks import (
-    RegionCallback,
-    SourceTypeCallback, SourceGroupCallback,
+    SourceGroupCallback,
 )
 from app.keyboards.main_menu import SEARCH_JOBS_BUTTON
 from app.keyboards.search_filters import (
@@ -30,7 +25,6 @@ from app.services.ever_jobs_client import (
     ever_jobs_client,
 )
 from app.services.job_relevance import (
-    calculate_relevance_score,
     is_job_relevant,
 )
 from app.states.search import SearchStates

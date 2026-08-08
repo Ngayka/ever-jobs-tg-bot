@@ -3,9 +3,8 @@ from aiogram.types import (
     InlineKeyboardMarkup,
 )
 
-from app.docs.job_sources import SourceGroup, SourceType
+from app.docs.job_sources import SourceGroup
 from app.keyboards.callbacks import (
-    RegionCallback,
     SourceTypeCallback, SourceGroupCallback,
 )
 from app.search_filters import (SourceSelection)
