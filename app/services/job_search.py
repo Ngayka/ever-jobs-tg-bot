@@ -1,3 +1,4 @@
+from typing import Any
 from app.docs.job_sources import SourceGroup, get_enabled_sources
 from app.services.ever_jobs_client import ever_jobs_client
 from app.services.job_relevance import is_job_relevant
@@ -8,7 +9,7 @@ async def search_relevant_jobs(
     search_term: str,
     source_group: SourceGroup,
     results_wanted: int = 10,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     sites = get_enabled_sources(
         group=source_group,
     )

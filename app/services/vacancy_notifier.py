@@ -1,12 +1,13 @@
+from typing import Any
 from app.database.models import JobSubscription
-from app.database.repository import vacancy_repository
-from app.docs.job_sources import SourceGroup, get_enabled_sources
+from app.database.repository.vacancy_repository import vacancy_repository
+from app.docs.job_sources import SourceGroup
 from app.services.job_search import search_relevant_jobs
 
 
 async def check_subscription(
     subscription: JobSubscription,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
 
     relevant_jobs = await search_relevant_jobs(
         search_term=subscription.search_term,

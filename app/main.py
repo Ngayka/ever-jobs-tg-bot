@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from contextlib import suppress
 
 from aiogram import Bot, Dispatcher
 
@@ -18,6 +19,7 @@ from app.handlers.search_navigation import (router as search_navigation_router,
 from app.handlers.subscriptions import (
     router as subscriptions_router,
 )
+from app.services.subscribtion import subscription_worker
 
 
 async def main() -> None:
@@ -25,6 +27,7 @@ async def main() -> None:
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
+
     await create_tables()
     bot = Bot(token=settings.telegram_bot_token)
     dispatcher = Dispatcher()
@@ -36,10 +39,17 @@ async def main() -> None:
     dispatcher.include_router(search_navigation_router)
     dispatcher.include_router(subscriptions_router)
 
+    worker_task = asyncio.create_task(
+        subscription_worker(bot)
+    )
 
     try:
         await dispatcher.start_polling(bot)
     finally:
+        worker_task.cancel()
+
+        with suppress(asyncio.CancelledError):
+            await worker_task
         await bot.session.close()
 
 
