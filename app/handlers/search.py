@@ -27,6 +27,7 @@ from app.services.ever_jobs_client import (
 from app.services.job_relevance import (
     is_job_relevant,
 )
+from app.services.job_search import search_relevant_jobs
 from app.states.search import SearchStates
 
 
@@ -140,11 +141,10 @@ async def select_source_type_and_search(
     )
 
     try:
-        jobs = await ever_jobs_client.search_jobs(
+        jobs = await search_relevant_jobs(
             search_term=search_term,
-            sites=sites,
+            source_group=source_group,
             results_wanted=10,
-            dedup=True,
         )
     except EverJobsApiError as error:
         await status_message.edit_text(
