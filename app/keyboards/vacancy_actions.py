@@ -6,7 +6,7 @@ from aiogram.types import (
 from app.database.models import VacancyStatus
 from app.keyboards.callbacks import (
     SearchNavigationCallback,
-    VacancyActionCallback,
+    VacancyActionCallback, SubscriptionCallback,
 )
 
 
@@ -21,8 +21,16 @@ def build_vacancy_actions_keyboard(
 
     if status == VacancyStatus.NEW:
         rows.append(
-            [
-                InlineKeyboardButton(
+            [   InlineKeyboardButton(
+                    text="🔔 Subscribe",
+                    callback_data=SubscriptionCallback(
+                        action="subscribe",
+                    ).pack(),
+                ),
+            ]
+        )
+        rows.append(
+            [    InlineKeyboardButton(
                     text="📨 Accept. Send CV",
                     callback_data=VacancyActionCallback(
                         action="applied",

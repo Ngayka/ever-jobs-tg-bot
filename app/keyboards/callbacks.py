@@ -35,3 +35,11 @@ class SourceTypeCallback(
     prefix="source_type",
 ):
     source_type: str
+
+
+class SubscriptionCallback(
+    CallbackData,
+    prefix="subscription",
+):
+    action: str
+    subscription_id: int | None = None

@@ -6,12 +6,12 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from app.database.models import VacancyStatus
-from app.database.repository import vacancy_repository
+from app.database.repository.vacancy_repository import vacancy_repository
 from app.docs.job_sources import (
     get_enabled_sources, SourceGroup
 )
 from app.keyboards.callbacks import (
-    SourceGroupCallback,
+    SourceGroupCallback, SubscriptionCallback,
 )
 from app.keyboards.main_menu import SEARCH_JOBS_BUTTON
 from app.keyboards.search_filters import (
