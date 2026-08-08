@@ -3,50 +3,44 @@ from aiogram.types import (
     InlineKeyboardMarkup,
 )
 
-from app.job_sources import Region, SourceType
+from app.docs.job_sources import SourceGroup, SourceType
 from app.keyboards.callbacks import (
     RegionCallback,
-    SourceTypeCallback,
+    SourceTypeCallback, SourceGroupCallback,
 )
 from app.search_filters import (SourceSelection)
 
 
-def build_region_keyboard() -> InlineKeyboardMarkup:
+def build_source_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
                     text="🇺🇦 Ukraine",
-                    callback_data=RegionCallback(
-                        region=Region.UKRAINE,
-                    ).pack(),
-                ),
-                InlineKeyboardButton(
-                    text="🇪🇺 Europe",
-                    callback_data=RegionCallback(
-                        region=Region.EUROPE,
+                    callback_data=SourceGroupCallback(
+                        source_group=SourceGroup.UKRAINE,
                     ).pack(),
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text="🇺🇸 USA & Canada",
-                    callback_data=RegionCallback(
-                        region=Region.NORTH_AMERICA,
+                    text="🇺🇦 Odoo Vacations Ukraine",
+                    callback_data=SourceGroupCallback(
+                        source_group=SourceGroup.ODOO_UKRAINE,
                     ).pack(),
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text="🌏 Asia",
-                    callback_data=RegionCallback(
-                        region=Region.ASIA,
+                    text="🌏 Odoo World",
+                    callback_data=SourceGroupCallback(
+                        source_group=SourceGroup.ODOO_WORLD,
                     ).pack(),
                 ),
                 InlineKeyboardButton(
-                    text="🌍 Worldwide",
-                    callback_data=RegionCallback(
-                        region=Region.WORLDWIDE,
+                    text="🌍 Worldwide (Job Boards)",
+                    callback_data=SourceGroupCallback(
+                        source_group=SourceGroup.WORLD_JOB_BOARDS,
                     ).pack(),
                 ),
             ],
@@ -67,17 +61,9 @@ def build_source_type_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
-                    text="🏢 Companies",
+                    text="🏢 Odoo Companies",
                     callback_data=SourceTypeCallback(
                         source_type=SourceSelection.COMPANIES,
-                    ).pack(),
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="⭐ All recommended",
-                    callback_data=SourceTypeCallback(
-                        source_type=SourceSelection.ALL,
                     ).pack(),
                 ),
             ],

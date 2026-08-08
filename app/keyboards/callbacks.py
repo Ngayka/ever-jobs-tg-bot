@@ -23,6 +23,13 @@ class RegionCallback(
     region: str
 
 
+class SourceGroupCallback(
+    CallbackData,
+    prefix="source_group",
+):
+    source_group: str
+
+
 class SourceTypeCallback(
     CallbackData,
     prefix="source_type",

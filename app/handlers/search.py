@@ -7,21 +7,20 @@ from aiogram.types import CallbackQuery, Message
 
 from app.database.models import VacancyStatus
 from app.database.repository import vacancy_repository
-from app.job_sources import (
-    Region,
-    get_sources, SourceType,
+from app.docs.job_sources import (
+    SOURCE_CATALOG,
+    get_enabled_sources, SourceGroup
 )
 from app.search_filters import (
     SourceSelection,
-    get_source_types,)
+    )
 from app.keyboards.callbacks import (
     RegionCallback,
-    SourceTypeCallback,
+    SourceTypeCallback, SourceGroupCallback,
 )
 from app.keyboards.main_menu import SEARCH_JOBS_BUTTON
 from app.keyboards.search_filters import (
-    build_region_keyboard,
-    build_source_type_keyboard,
+    build_source_keyboard,
 )
 from app.keyboards.vacancy_actions import (
     build_vacancy_actions_keyboard,
@@ -63,7 +62,6 @@ async def request_search_term(
         "• Junior Odoo Developer\n"
         "• Data Analyst"
     )
-
 @router.message(
     SearchStates.waiting_for_search_term,
     F.text,
@@ -85,156 +83,52 @@ async def receive_search_term(
     )
 
     await state.set_state(
-        SearchStates.waiting_for_region
-    )
-
-    await message.answer(
-        "Select search region:",
-        reply_markup=build_region_keyboard(),
-    )
-
-@router.callback_query(
-    SearchStates.waiting_for_region,
-    RegionCallback.filter(),
-)
-async def select_region(
-    callback: CallbackQuery,
-    callback_data: RegionCallback,
-    state: FSMContext,
-) -> None:
-    try:
-        region = Region(callback_data.region)
-    except ValueError:
-        await callback.answer(
-            "Unknown region.",
-            show_alert=True,
-        )
-        return
-
-    await state.update_data(
-        region=region.value,
-    )
-
-    await state.set_state(
         SearchStates.waiting_for_source_type
     )
 
-    await callback.answer()
-
-    if callback.message:
-        await callback.message.edit_text(
-            "Select source type:",
-            reply_markup=build_source_type_keyboard(),
-        )
+    await message.answer(
+        "Where should I search?",
+        reply_markup=build_source_keyboard(),
+    )
 
 @router.callback_query(
     SearchStates.waiting_for_source_type,
-    SourceTypeCallback.filter(),
+    SourceGroupCallback.filter(),
 )
 async def select_source_type_and_search(
     callback: CallbackQuery,
-    callback_data: SourceTypeCallback,
+    callback_data: SourceGroupCallback,
     state: FSMContext,
 ) -> None:
     try:
-        source_selection = SourceSelection(
-            callback_data.source_type
+        source_group = SourceGroup(
+            callback_data.source_group
         )
     except ValueError:
         await callback.answer(
-            "Unknown source type.",
+            "Unknown source group.",
             show_alert=True,
         )
         return
-
     data = await state.get_data()
 
     search_term = str(
         data.get("search_term") or ""
     ).strip()
 
-    region_value = data.get("region")
-
-    if not search_term or not region_value:
+    if not search_term:
         await callback.answer(
             "Search data lost. Please start search again.",
             show_alert=True,
         )
         await state.clear()
         return
-
-    try:
-        region = Region(region_value)
-    except ValueError:
-        await callback.answer(
-            "Unknown region.",
-            show_alert=True,
-        )
-        await state.clear()
-        return
-
-    source_types = get_source_types(
-        source_selection,
+    sites = get_enabled_sources(
+        group=source_group,
     )
 
-    if source_selection == SourceSelection.COMPANIES:
-        # Корпоративні scraper-и в каталозі позначені
-        # як WORLDWIDE, а регіон вакансії визначається
-        # вже за location у результатах.
-        sites = get_sources(
-            region=Region.WORLDWIDE,
-            source_types={
-                SourceType.COMPANY,
-            },
-        )
-
-    elif source_selection == SourceSelection.ALL:
-        # Беремо job boards обраного регіону.
-        regional_sites = get_sources(
-            region=region,
-            source_types={
-                SourceType.JOB_BOARD,
-                SourceType.REMOTE_JOB_BOARD,
-                SourceType.GOVERNMENT,
-                SourceType.NICHE,
-            },
-        )
-
-        # Корпоративні джерела беремо з WORLDWIDE.
-        company_sites = get_sources(
-            region=Region.WORLDWIDE,
-            source_types={
-                SourceType.COMPANY,
-            },
-        )
-
-        # Об'єднуємо списки без дублікатів.
-        sites = list(
-            dict.fromkeys(
-                regional_sites + company_sites
-            )
-        )
-
-    else:
-        # Звичайний пошук по job boards обраного регіону.
-        sites = get_sources(
-            region=region,
-            source_types=source_types,
-        )
-    if not sites:
-        await callback.answer()
-
-        if callback.message:
-            await callback.message.edit_text(
-                "No data available for chosen "
-                "region and source type."
-            )
-
-        await state.clear()
-        return
-
     await state.update_data(
-        source_type=source_selection.value,
+        source_group=source_group.value,
     )
 
     await callback.answer()
@@ -247,8 +141,7 @@ async def select_source_type_and_search(
     await status_message.edit_text(
         "🔎 Looking for vacancies\n\n"
         f"Title: <b>{escape(search_term)}</b>\n"
-        f"Regions: <b>{escape(region.value)}</b>\n"
-        f"Sources: <b>{escape(source_selection.value)}</b>",
+        f"Sources: <b>{escape(source_group.value)}</b>",
         parse_mode="HTML",
     )
 
@@ -256,7 +149,7 @@ async def select_source_type_and_search(
         jobs = await ever_jobs_client.search_jobs(
             search_term=search_term,
             sites=sites,
-            results_wanted=5,
+            results_wanted=10,
             dedup=True,
         )
     except EverJobsApiError as error:
@@ -276,19 +169,6 @@ async def select_source_type_and_search(
         )
         await state.clear()
         return
-
-
-    for job in jobs:
-        score = calculate_relevance_score(
-            job=job,
-            search_term=search_term,
-        )
-    print(
-        f"[relevance={score}] "
-        f"{job.get('title')} | "
-        f"{job.get('site')}"
-    )
-
 
     relevant_jobs = [
         job for job in jobs
@@ -371,7 +251,6 @@ async def select_source_type_and_search(
             total_jobs=len(visible_jobs),
         ),
     )
-
 
 def format_job_card(
     job: dict,

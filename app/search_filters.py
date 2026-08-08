@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from app.job_sources import SourceType
+from app.docs.job_sources import SourceType
 
 
 class SourceSelection(StrEnum):
@@ -16,21 +16,20 @@ def get_source_types(
         return {
             SourceType.JOB_BOARD,
             SourceType.REMOTE_JOB_BOARD,
-            SourceType.GOVERNMENT,
-            SourceType.NICHE,
-            SourceType.FREELANCE,
+            SourceType.COMPANY_GROUP,
+            SourceType.OFFICIAL_CAREERS,
+            #SourceType.FREELANCE,
         }
 
     if selection == SourceSelection.COMPANIES:
         return {
-            SourceType.COMPANY,
+            SourceType.COMPANY_GROUP,
         }
 
     return {
         SourceType.JOB_BOARD,
         SourceType.REMOTE_JOB_BOARD,
-        SourceType.GOVERNMENT,
-        SourceType.NICHE,
-        SourceType.COMPANY,
-        SourceType.FREELANCE,
+        SourceType.OFFICIAL_CAREERS,
+        SourceType.COMPANY_GROUP,
+        #SourceType.FREELANCE,
     }
