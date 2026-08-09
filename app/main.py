@@ -19,7 +19,7 @@ from app.handlers.search_navigation import (router as search_navigation_router,
 from app.handlers.subscriptions import (
     router as subscriptions_router,
 )
-from app.services.subscribtion import subscription_worker
+from app.services.subscription import subscription_worker
 
 
 async def main() -> None:

@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
-from app.database.repository import vacancy_repository
+from app.database.repository.vacancy_repository import vacancy_repository
 from app.handlers.search import format_job_card
 from app.keyboards.callbacks import SearchNavigationCallback
 from app.keyboards.vacancy_actions import (

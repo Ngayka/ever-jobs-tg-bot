@@ -3,7 +3,7 @@ from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from app.database.models import VacancyStatus
-from app.database.repository import vacancy_repository
+from app.database.repository.vacancy_repository import vacancy_repository
 from app.keyboards.callbacks import VacancyActionCallback
 from app.keyboards.vacancy_actions import (
     build_vacancy_actions_keyboard,

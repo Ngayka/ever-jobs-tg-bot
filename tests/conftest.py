@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.database.base import Base
-from app.database.repository import VacancyRepository
+from app.database.repository.vacancy_repository import VacancyRepository
 
 
 @pytest_asyncio.fixture

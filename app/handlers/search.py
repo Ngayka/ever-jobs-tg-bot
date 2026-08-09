@@ -11,7 +11,7 @@ from app.docs.job_sources import (
     get_enabled_sources, SourceGroup
 )
 from app.keyboards.callbacks import (
-    SourceGroupCallback, SubscriptionCallback,
+    SourceGroupCallback
 )
 from app.keyboards.main_menu import SEARCH_JOBS_BUTTON
 from app.keyboards.search_filters import (

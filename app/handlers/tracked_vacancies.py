@@ -7,7 +7,7 @@ from app.database.models import (
     TrackedVacancy,
     VacancyStatus,
 )
-from app.database.repository import vacancy_repository
+from app.database.repository.vacancy_repository import vacancy_repository
 from app.keyboards.main_menu import (
     APPLIED_JOBS_BUTTON,
     INTERVIEWS_BUTTON,
