@@ -11,6 +11,7 @@ class SubscriptionRepository:
         telegram_user_id: int,
         search_term: str,
         source_group: str,
+        location: str | None = None,
     ) -> JobSubscription:
         async with async_session_factory() as session:
             statement = select(JobSubscription).where(
@@ -20,6 +21,8 @@ class SubscriptionRepository:
                 == search_term,
                 JobSubscription.source_group
                 == source_group,
+                JobSubscription.location
+                == location,
             )
 
             result = await session.execute(statement)
@@ -37,6 +40,7 @@ class SubscriptionRepository:
                 telegram_user_id=telegram_user_id,
                 search_term=search_term,
                 source_group=source_group,
+                location = location,
                 enabled=True,
             )
 

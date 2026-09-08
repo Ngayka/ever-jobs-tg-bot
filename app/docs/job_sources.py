@@ -8,7 +8,9 @@ class SourceGroup(StrEnum):
     UKRAINE = "ukraine"
     ODOO_UKRAINE = "odoo_ukraine"
     ODOO_WORLD = "odoo_world"
-    WORLD_JOB_BOARDS = "world_job_boards"
+    JOB_BOARDS_WW = "world_job_boards"
+    LINKEDIN = "linkedin"
+    REMOTEFIRSTJOBS = "remote_first_jobs"
 
 
 class SourceType(StrEnum):
@@ -65,47 +67,61 @@ SOURCE_CATALOG: dict[str, SourceMetadata] = {
         "priority": 105,
     },
     "LINKEDIN": {
-        "group": SourceGroup.WORLD_JOB_BOARDS,
-        "source_type": SourceType.JOB_BOARD,
-        "enabled": True,
-        "recommended_for_mvp": True,
-        "priority": 100,
-    },
-    "INDEED": {
-        "group": SourceGroup.WORLD_JOB_BOARDS,
-        "source_type": SourceType.JOB_BOARD,
-        "enabled": True,
-        "recommended_for_mvp": True,
-        "priority": 95,
-    },
-    "GLASSDOOR": {
-        "group": SourceGroup.WORLD_JOB_BOARDS,
+        "group": SourceGroup.LINKEDIN,
         "source_type": SourceType.JOB_BOARD,
         "enabled": True,
         "recommended_for_mvp": True,
         "priority": 80,
     },
-    "WELLFOUND": {
-        "group": SourceGroup.WORLD_JOB_BOARDS,
+    # "INDEED": {
+    #     "group": SourceGroup.WORLD_JOB_BOARDS,
+    #     "source_type": SourceType.JOB_BOARD,
+    #     "enabled": True,
+    #     "recommended_for_mvp": True,
+    #     "priority": 100,
+    # },
+    "GLASSDOOR": {
+        "group": SourceGroup.JOB_BOARDS_WW,
         "source_type": SourceType.JOB_BOARD,
-        "enabled": True,
+        "enabled": False,
         "recommended_for_mvp": True,
-        "priority": 70,
+        "priority": 90,
+    },
+    "WELLFOUND": {
+        "group": SourceGroup.JOB_BOARDS_WW,
+        "source_type": SourceType.JOB_BOARD,
+        "enabled": False,
+        "recommended_for_mvp": True,
+        "priority": 80,
     },
     "WEWORKREMOTELY": {
-        "group": SourceGroup.WORLD_JOB_BOARDS,
+        "group": SourceGroup.JOB_BOARDS_WW,
         "source_type": SourceType.REMOTE_JOB_BOARD,
         "enabled": True,
         "recommended_for_mvp": True,
-        "priority": 65,
+        "priority": 80,
     },
     "REMOTEOK": {
-        "group": SourceGroup.WORLD_JOB_BOARDS,
+        "group": SourceGroup.JOB_BOARDS_WW,
         "source_type": SourceType.REMOTE_JOB_BOARD,
         "enabled": True,
         "recommended_for_mvp": True,
-        "priority": 60,
+        "priority": 75,
     },
+    "PYJOBS": {
+        'group': SourceGroup.JOB_BOARDS_WW,
+        "source_type": SourceType.REMOTE_JOB_BOARD,
+        "enabled": True,
+        "recommended_for_mvp": True,
+        "priority": 80,
+    },
+    "REMOTEFIRSTJOBS": {
+        'group': SourceGroup.REMOTEFIRSTJOBS,
+        "source_type": SourceType.REMOTE_JOB_BOARD,
+        "enabled": True,
+        "recommended_for_mvp": True,
+        "priority": 80,
+    }
 }
 
 

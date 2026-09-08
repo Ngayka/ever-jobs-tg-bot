@@ -27,6 +27,8 @@ async def subscription_action(
             data.get("source_group") or ""
         ).strip()
 
+        location = data.get("location")
+
         if not search_term or not source_group:
             await callback.answer(
                 "Search data lost.",
@@ -39,12 +41,14 @@ async def subscription_action(
             telegram_user_id=callback.from_user.id,
             search_term=search_term,
             source_group=source_group,
+            location=location,
         )
 
         await callback.answer(
             "Subscription enabled ✅",
             show_alert=True,
         )
+        return
 
     elif callback_data.action == "unsubscribe":
         if callback_data.subscription_id is None:
@@ -54,12 +58,12 @@ async def subscription_action(
             )
             return
 
-        subscription = await subscription_repository.disable(
+        disabled = await subscription_repository.disable(
             subscription_id=callback_data.subscription_id,
             telegram_user_id=callback.from_user.id,
         )
 
-        if subscription is None:
+        if not disabled:
             await callback.answer(
                 "Subscription not found.",
                 show_alert=True,

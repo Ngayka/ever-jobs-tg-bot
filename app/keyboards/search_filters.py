@@ -39,7 +39,19 @@ def build_source_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text="🌍 Worldwide (Job Boards)",
                     callback_data=SourceGroupCallback(
-                        source_group=SourceGroup.WORLD_JOB_BOARDS,
+                        source_group=SourceGroup.JOB_BOARDS_WW,
+                    ).pack(),
+                ),
+                InlineKeyboardButton(
+                    text="💼 LinkedIn (Job Boards)",
+                    callback_data=SourceGroupCallback(
+                        source_group=SourceGroup.LINKEDIN,
+                    ).pack(),
+                ),
+                InlineKeyboardButton(
+                    text="💼 Remote First Jobs (Job Boards)",
+                    callback_data=SourceGroupCallback(
+                        source_group=SourceGroup.REMOTEFIRSTJOBS,
                     ).pack(),
                 ),
             ],

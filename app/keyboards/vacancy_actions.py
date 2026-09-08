@@ -16,36 +16,38 @@ def build_vacancy_actions_keyboard(
     *,
     current_index: int | None = None,
     total_jobs: int | None = None,
+    subscription_id: int | None = None
 ) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
 
     if status == VacancyStatus.NEW:
-        rows.append(
-            [   InlineKeyboardButton(
-                    text="🔔 Subscribe",
-                    callback_data=SubscriptionCallback(
-                        action="subscribe",
-                    ).pack(),
-                ),
-            ]
-        )
-        rows.append(
-            [    InlineKeyboardButton(
-                    text="📨 Accept. Send CV",
-                    callback_data=VacancyActionCallback(
-                        action="applied",
-                        vacancy_id=vacancy_id,
-                    ).pack(),
-                ),
-                InlineKeyboardButton(
-                    text="❌ Reject",
-                    callback_data=VacancyActionCallback(
-                        action="reject",
-                        vacancy_id=vacancy_id,
-                    ).pack(),
-                ),
-            ]
-        )
+        if subscription_id is None:
+            rows.append(
+                [   InlineKeyboardButton(
+                        text="🔔 Subscribe",
+                        callback_data=SubscriptionCallback(
+                            action="subscribe",
+                        ).pack(),
+                    ),
+                ]
+            )
+            rows.append(
+                [    InlineKeyboardButton(
+                        text="📨 Accept. Send CV",
+                        callback_data=VacancyActionCallback(
+                            action="applied",
+                            vacancy_id=vacancy_id,
+                        ).pack(),
+                    ),
+                    InlineKeyboardButton(
+                        text="❌ Reject",
+                        callback_data=VacancyActionCallback(
+                            action="reject",
+                            vacancy_id=vacancy_id,
+                        ).pack(),
+                    ),
+                ]
+            )
 
     elif status == VacancyStatus.APPLIED:
         rows.append(
@@ -66,6 +68,14 @@ def build_vacancy_actions_keyboard(
                 ),
             ]
         )
+
+    if subscription_id is not None:
+        rows.append([
+            InlineKeyboardButton(text="🔕 Unsubscribe",
+                callback_data=SubscriptionCallback(
+                    action="unsubscribe",
+                    subscription_id=subscription_id,).pack())
+        ])
 
     if (
         current_index is not None

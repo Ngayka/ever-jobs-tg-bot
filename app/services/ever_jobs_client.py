@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Any
 import httpx
 from app.config import settings
@@ -68,6 +69,7 @@ class EverJobsClient:
         self,
         search_term: str,
         *,
+        location: str | None = None,
         results_wanted: int = 5,
         sites: list[str] | None = None,
         dedup: bool = True,
@@ -80,6 +82,9 @@ class EverJobsClient:
 
         if sites:
             input_data["siteType"] = sites
+
+        if location:
+            input_data["location"] = location
 
         payload = {
             "query": SEARCH_JOBS_QUERY,
@@ -130,7 +135,6 @@ class EverJobsClient:
             raise EverJobsApiError(
                 "API повернув вакансії у неправильному форматі."
             )
-
         return jobs
 
 

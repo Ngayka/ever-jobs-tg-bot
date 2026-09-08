@@ -153,6 +153,10 @@ class JobSubscription(Base):
 
     source_group: Mapped[str]
 
+    location: Mapped[str | None] = mapped_column(
+        nullable=True,
+    )
+
     enabled: Mapped[bool] = mapped_column(
         default=True,
     )

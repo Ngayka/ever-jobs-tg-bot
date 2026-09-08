@@ -14,6 +14,7 @@ async def check_subscription(
         source_group=SourceGroup(
             subscription.source_group
         ),
+        location=subscription.location,
         results_wanted=20,
     )
 

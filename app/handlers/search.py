@@ -13,6 +13,7 @@ from app.docs.job_sources import (
 from app.keyboards.callbacks import (
     SourceGroupCallback
 )
+from app.keyboards.locations import get_location_keyboard
 from app.keyboards.main_menu import SEARCH_JOBS_BUTTON
 from app.keyboards.search_filters import (
     build_source_keyboard,
@@ -24,9 +25,7 @@ from app.services.ever_jobs_client import (
     EverJobsApiError,
     ever_jobs_client,
 )
-from app.services.job_relevance import (
-    is_job_relevant,
-)
+
 from app.services.job_search import search_relevant_jobs
 from app.states.search import SearchStates
 
@@ -118,20 +117,154 @@ async def select_source_type_and_search(
         )
         await state.clear()
         return
-    sites = get_enabled_sources(
-        group=source_group,
-    )
 
     await state.update_data(
         source_group=source_group.value,
     )
 
     await callback.answer()
+    if callback.message is None:
+        return
+    if source_group in {
+        SourceGroup.LINKEDIN,
+        SourceGroup.REMOTEFIRSTJOBS,
+    }:
+        await callback.message.answer(
+            "Введите название страны на английском, "
+            "например: Poland, Germany, Spain.",
+            reply_markup=get_location_keyboard(),
+        )
+        await state.set_state(
+            SearchStates.waiting_for_location
+        )
+        return
+
+    await run_search(
+        message=callback.message,
+        telegram_user_id=callback.from_user.id,
+        state=state,
+        search_term=search_term,
+        source_group=source_group,
+    )
+
+
+@router.message(
+    SearchStates.waiting_for_location,
+    F.text,
+)
+async def receive_location(
+    message: Message,
+    state: FSMContext,
+) -> None:
+    location = (message.text or "").strip()
+
+    if not location:
+        await message.answer(
+            "Enter the name of the country in English."
+        )
+        return
+
+    await state.update_data(
+        location=location,
+    )
+
+    data = await state.get_data()
+
+    search_term = str(
+        data.get("search_term") or ""
+    ).strip()
+
+    source_group_value = str(
+        data.get("source_group") or ""
+    ).strip()
+
+    if not search_term or not source_group_value:
+        await message.answer(
+            "Search data lost. Please start search again."
+        )
+        await state.clear()
+        return
+
+    source_group = SourceGroup(source_group_value)
+    status_message = await message.answer(
+        "🔎 Starting search..."
+    )
+    await run_search(
+        message=status_message,
+        telegram_user_id=message.from_user.id,
+        state=state,
+        search_term=search_term,
+        source_group=source_group,
+        location=location,
+    )
+@router.callback_query(
+    SearchStates.waiting_for_location,
+    F.data == "location:none",
+)
+async def search_without_location(
+    callback: CallbackQuery,
+    state: FSMContext,
+) -> None:
+    await callback.answer()
 
     if callback.message is None:
         return
 
-    status_message = callback.message
+    data = await state.get_data()
+
+    search_term = str(
+        data.get("search_term") or ""
+    ).strip()
+
+    source_group_value = str(
+        data.get("source_group") or ""
+    ).strip()
+
+    if not search_term or not source_group_value:
+        await callback.message.edit_text(
+            "Search data lost. Please start search again."
+        )
+        await state.clear()
+        return
+
+    source_group = SourceGroup(source_group_value)
+
+    await run_search(
+        message=callback.message,
+        telegram_user_id=callback.from_user.id,
+        state=state,
+        search_term=search_term,
+        source_group=source_group,
+        location=None,
+    )
+
+    @router.callback_query(
+        SearchStates.waiting_for_location,
+        F.data == "location:cancel",
+    )
+    async def cancel_location_search(
+            callback: CallbackQuery,
+            state: FSMContext,
+    ) -> None:
+        await callback.answer()
+
+        await state.clear()
+
+        if callback.message is not None:
+            await callback.message.edit_text(
+                "Search cancelled."
+            )
+
+async def run_search(
+    *,
+    message: Message,
+    telegram_user_id: int,
+    state: FSMContext,
+    search_term: str,
+    source_group: SourceGroup,
+    location: str | None = None,) -> None:
+
+    status_message = message
 
     await status_message.edit_text(
         "🔎 Looking for vacancies\n\n"
@@ -144,7 +277,8 @@ async def select_source_type_and_search(
         jobs = await search_relevant_jobs(
             search_term=search_term,
             source_group=source_group,
-            results_wanted=10,
+            location=location,
+            results_wanted=15,
         )
     except EverJobsApiError as error:
         await status_message.edit_text(
@@ -153,6 +287,7 @@ async def select_source_type_and_search(
             parse_mode="HTML",
         )
         await state.clear()
+
         return
 
     if not jobs:
@@ -164,15 +299,7 @@ async def select_source_type_and_search(
         await state.clear()
         return
 
-    relevant_jobs = [
-        job for job in jobs
-        if is_job_relevant(
-            job=job,
-            search_term=search_term,
-        )
-    ]
-
-    if not relevant_jobs:
+    if not jobs:
         await status_message.edit_text(
             "Vacancies were found, but none matched "
             "the required skills closely enough."
@@ -182,7 +309,7 @@ async def select_source_type_and_search(
 
     visible_jobs: list[dict[str, Any]] = []
 
-    for job in relevant_jobs:
+    for job in jobs:
         site = str(job.get("site") or "unknown")
         external_job_id = str(
             job.get("id")
@@ -192,7 +319,7 @@ async def select_source_type_and_search(
 
         existing = (
             await vacancy_repository.get_by_external_id(
-                telegram_user_id=callback.from_user.id,
+                telegram_user_id=telegram_user_id,
                 site=site,
                 external_job_id=external_job_id,
             )
@@ -226,7 +353,7 @@ async def select_source_type_and_search(
     first_job = visible_jobs[0]
 
     vacancy = await vacancy_repository.create_or_get(
-        telegram_user_id=callback.from_user.id,
+        telegram_user_id=telegram_user_id,
         job=first_job,
     )
 
@@ -245,6 +372,7 @@ async def select_source_type_and_search(
             total_jobs=len(visible_jobs),
         ),
     )
+
 
 def format_job_card(
     job: dict,
