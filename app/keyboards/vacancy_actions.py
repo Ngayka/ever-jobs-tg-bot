@@ -41,23 +41,23 @@ def build_vacancy_actions_keyboard(
                     ).pack()
                 )]
             )
-            rows.append(
-                [    InlineKeyboardButton(
-                        text="📨 Accept. Send CV",
-                        callback_data=VacancyActionCallback(
-                            action="applied",
-                            vacancy_id=vacancy_id,
-                        ).pack(),
-                    ),
-                    InlineKeyboardButton(
-                        text="❌ Reject",
-                        callback_data=VacancyActionCallback(
-                            action="reject",
-                            vacancy_id=vacancy_id,
-                        ).pack(),
-                    ),
-                ]
-            )
+        rows.append(
+            [    InlineKeyboardButton(
+                    text="📨 Accept. Send CV",
+                    callback_data=VacancyActionCallback(
+                        action="applied",
+                        vacancy_id=vacancy_id,
+                    ).pack(),
+                ),
+                InlineKeyboardButton(
+                    text="❌ Reject",
+                    callback_data=VacancyActionCallback(
+                        action="reject",
+                        vacancy_id=vacancy_id,
+                    ).pack(),
+                ),
+            ]
+        )
 
     elif status == VacancyStatus.APPLIED:
         rows.append(
