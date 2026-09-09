@@ -1,9 +1,11 @@
 from aiogram import Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 from app.database.repository.subscription_repository import subscription_repository
+from app.database.repository.vacancy_repository import vacancy_repository
 from app.keyboards.callbacks import SubscriptionCallback
+from app.keyboards.vacancy_actions import build_vacancy_actions_keyboard
 
 router = Router()
 
@@ -37,12 +39,32 @@ async def subscription_action(
             return
 
 
-        await subscription_repository.create_or_get(
+        subscription = await subscription_repository.create_or_get(
             telegram_user_id=callback.from_user.id,
             search_term=search_term,
             source_group=source_group,
             location=location,
         )
+        jobs = data.get("search_jobs", [])
+        current_index = data.get("current_job_index", 0)
+
+        if jobs and isinstance(callback.message, Message):
+            job = jobs[current_index]
+
+            vacancy = await vacancy_repository.create_or_get(
+                telegram_user_id=callback.from_user.id,
+                job=job,
+            )
+
+            await callback.message.edit_reply_markup(
+                reply_markup=build_vacancy_actions_keyboard(
+                    vacancy_id=vacancy.id,
+                    status=vacancy.status,
+                    current_index=current_index,
+                    total_jobs=len(jobs),
+                    subscription_id=subscription.id,
+                )
+            )
 
         await callback.answer(
             "Subscription enabled ✅",
@@ -69,6 +91,27 @@ async def subscription_action(
                 show_alert=True,
             )
             return
+        data = await state.get_data()
+        jobs = data.get("search_jobs", [])
+        current_index = data.get("current_job_index", 0)
+
+        if jobs and isinstance(callback.message, Message):
+            job = jobs[current_index]
+
+            vacancy = await vacancy_repository.create_or_get(
+                telegram_user_id=callback.from_user.id,
+                job=job,
+            )
+
+            await callback.message.edit_reply_markup(
+                reply_markup=build_vacancy_actions_keyboard(
+                    vacancy_id=vacancy.id,
+                    status=vacancy.status,
+                    current_index=current_index,
+                    total_jobs=len(jobs),
+                    subscription_id=None,
+                )
+            )
 
         await callback.answer(
             "Subscription disabled 🔕",

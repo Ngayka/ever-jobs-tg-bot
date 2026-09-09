@@ -31,6 +31,16 @@ def build_vacancy_actions_keyboard(
                     ),
                 ]
             )
+        else:
+            rows.append(
+                [ InlineKeyboardButton(
+                    text="🔕 Unsubscribe",
+                    callback_data=SubscriptionCallback(
+                        action="unsubscribe",
+                        subscription_id=subscription_id,
+                    ).pack()
+                )]
+            )
             rows.append(
                 [    InlineKeyboardButton(
                         text="📨 Accept. Send CV",
@@ -68,14 +78,6 @@ def build_vacancy_actions_keyboard(
                 ),
             ]
         )
-
-    if subscription_id is not None:
-        rows.append([
-            InlineKeyboardButton(text="🔕 Unsubscribe",
-                callback_data=SubscriptionCallback(
-                    action="unsubscribe",
-                    subscription_id=subscription_id,).pack())
-        ])
 
     if (
         current_index is not None

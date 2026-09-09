@@ -49,5 +49,6 @@ async def notify_subscription(
                 status=vacancy.status,
                 current_index=0,
                 total_jobs=1,
+                subscription_id=subscription.id,
             ),
         )

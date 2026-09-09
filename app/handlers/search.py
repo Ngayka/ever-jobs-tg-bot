@@ -6,6 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from app.database.models import VacancyStatus
+from app.database.repository.subscription_repository import subscription_repository
 from app.database.repository.vacancy_repository import vacancy_repository
 from app.docs.job_sources import (
     get_enabled_sources, SourceGroup
@@ -348,6 +349,9 @@ async def run_search(
     await state.update_data(
         search_jobs=visible_jobs,
         current_job_index=0,
+        search_term=search_term,
+        source_group=source_group.value,
+        location=location,
     )
 
     first_job = visible_jobs[0]
@@ -356,7 +360,12 @@ async def run_search(
         telegram_user_id=telegram_user_id,
         job=first_job,
     )
-
+    subscription = await subscription_repository.get_active_for_search(
+        telegram_user_id=telegram_user_id,
+        search_term=search_term,
+        source_group=source_group.value,
+        location=location,
+    )
     await status_message.edit_text(
         format_job_card(
             first_job,
@@ -370,6 +379,11 @@ async def run_search(
             status=vacancy.status,
             current_index=0,
             total_jobs=len(visible_jobs),
+            subscription_id=(
+                subscription.id
+                if subscription is not None
+                else None
+            ),
         ),
     )
 

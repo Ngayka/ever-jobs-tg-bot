@@ -92,6 +92,31 @@ class SubscriptionRepository:
                 result.scalars().all()
             )
 
+    async def get_active_for_search(
+            self,
+            *,
+            telegram_user_id: int,
+            search_term: str,
+            source_group: str,
+            location: str | None = None,
+    ) -> JobSubscription | None:
+        async with async_session_factory() as session:
+            statement = select(JobSubscription).where(
+                JobSubscription.telegram_user_id
+                == telegram_user_id,
+                JobSubscription.search_term
+                == search_term,
+                JobSubscription.source_group
+                == source_group,
+                JobSubscription.location
+                == location,
+                JobSubscription.enabled.is_(True),
+            )
+
+            result = await session.execute(statement)
+
+            return result.scalar_one_or_none()
+
     async def get_by_id(
         self,
         *,

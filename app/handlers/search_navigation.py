@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
+from app.database.repository.subscription_repository import subscription_repository
 from app.database.repository.vacancy_repository import vacancy_repository
 from app.handlers.search import format_job_card
 from app.keyboards.callbacks import SearchNavigationCallback
@@ -58,6 +59,13 @@ async def navigate_search_results(
         job=job,
     )
 
+    subscription = await subscription_repository.get_active_for_search(
+        telegram_user_id=callback.from_user.id,
+        search_term=str(data.get("search_term") or "").strip(),
+        source_group=str(data.get("source_group") or "").strip(),
+        location=data.get("location"),
+    )
+
     await state.update_data(
         current_job_index=new_index,
     )
@@ -80,6 +88,11 @@ async def navigate_search_results(
             status=vacancy.status,
             current_index=new_index,
             total_jobs=len(jobs),
+            subscription_id=(
+                subscription.id
+                if subscription is not None
+                else None
+            )
         ),
     )
 
