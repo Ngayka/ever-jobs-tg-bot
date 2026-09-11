@@ -5,3 +5,6 @@ __pycache__/
 .pytest_cache/
 .idea/
 ever_jobs_bot.db
+ever_jobs_bot.db-*
+*.db.backup
+*.db.before_pull

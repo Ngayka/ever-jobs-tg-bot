@@ -4,11 +4,12 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from app.config import settings
 from app.database.base import Base
 from app.database.models import TrackedVacancy
 
 
-DATABASE_URL = "sqlite+aiosqlite:///./ever_jobs_bot.db"
+DATABASE_URL = settings.database_url
 
 
 engine = create_async_engine(
